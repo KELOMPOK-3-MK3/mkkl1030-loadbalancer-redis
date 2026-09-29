@@ -131,5 +131,14 @@ mkkl1030-loadbalancer-redis/
 | Tahap | Target | Status |
 |---|---|---|
 | Pertemuan 2 | Rencana proyek, repository, undangan kolaborator | Selesai |
-| Pertemuan 8 (UTS) | Seluruh container berjalan dan klien dapat mengakses layanan melalui load balancer … | Belum dimulai |
-| Pertemuan 16 (UAS) | Sistem tiga komponen yang berjalan penuh dan dapat dijalankan ulang dari satu berkas Compo … | Belum dimulai |
+| Pertemuan 8 (UTS) | Seluruh container berjalan dan klien mengakses layanan melalui load balancer | Selesai |
+| Pertemuan 16 (UAS) | Sistem berjalan penuh dan dapat dijalankan ulang dari satu berkas Compose | Sebagian |
+
+Pertemuan 8 sudah terpenuhi dan **terukur**: enam skenario pada
+[`docs/hasil-uji-kegagalan.md`](docs/hasil-uji-kegagalan.md) dijalankan pada
+perangkat sungguhan (Docker Desktop, empat container), dengan bukti berupa
+angka — bukan pembacaan konfigurasi.
+
+Untuk UAS yang masih perlu ditambahkan: pengujian **antar-mesin** (container
+dipecah ke dua host agar latensi dan throughput mewakili jaringan sungguhan),
+serta pencatatan waktu peralihan saat satu node dimatikan.
