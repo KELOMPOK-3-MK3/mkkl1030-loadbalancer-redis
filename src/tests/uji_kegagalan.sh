@@ -10,7 +10,7 @@
 set -u
 
 URL="${URL:-http://localhost:8080}"
-PROYEK="github.com/axolotl-void/mkkl1030-loadbalancer-redis"
+PROYEK="github.com/KELOMPOK-3-MK3/mkkl1030-loadbalancer-redis"
 
 catat() { printf '\n%s\n' "$*"; }
 
@@ -18,6 +18,15 @@ catat() { printf '\n%s\n' "$*"; }
 hitung_server() {
   awk -F'"server": *"' '{if (NF>1) {split($2,a,"\""); c[a[1]]++}}
                           END {for (s in c) printf "  %s: %d respons\n", s, c[s]}'
+}
+
+# Menghitung alamat upstream dari log akses Nginx. Dipakai untuk membuktikan
+# pembagian beban pada uji beban tinggi: dua cuplikan (sebelum dan sesudah)
+# dibandingkan, selisihnya adalah milik uji beban itu sendiri.
+hitung_upstream() {
+  docker compose logs nginx 2>/dev/null \
+    | grep -o 'upstream=[0-9.]*:[0-9]*' \
+    | sed 's/upstream=//' | sort | uniq -c
 }
 
 # Menunggu sebuah container berstatus healthy (maks 40 detik).
@@ -43,14 +52,40 @@ echo "$NORMAL" | hitung_server
 
 # ===========================================================================
 catat "=== 2. Beban tinggi: 1000 permintaan, 50 bersamaan ==="
+# Cuplikan log sebelum uji beban, supaya bisa dihitung selisihnya sesudah.
+SEBELUM_LOG=$(hitung_upstream)
 if command -v hey >/dev/null 2>&1; then
   hey -n 1000 -c 50 "$URL/" 2>&1 | grep -Ei \
     'Requests/sec|Total:|Average:|Fastest:|Slowest:|Status code|\[200\]|response time histogram' \
     | head -20
-  echo "  (setiap respons membawa header X-Served-By — lihat catatan di dokumen)"
 else
   echo "  hey tidak terpasang — dilewati (pasang: brew install hey)"
 fi
+SESUDAH_LOG=$(hitung_upstream)
+echo "--- pembagian upstream (selisih log sebelum vs sesudah uji beban) ---"
+python3 - "$SEBELUM_LOG" "$SESUDAH_LOG" <<'PY'
+import re, sys
+
+def baca(teks):
+    hasil = {}
+    for baris in teks.strip().splitlines():
+        m = re.match(r'\s*(\d+)\s+(\S+)', baris)
+        if m:
+            hasil[m.group(2)] = int(m.group(1))
+    return hasil
+
+sebelum, sesudah = baca(sys.argv[1]), baca(sys.argv[2])
+total = 0
+for alamat in sorted(set(sebelum) | set(sesudah)):
+    naik = sesudah.get(alamat, 0) - sebelum.get(alamat, 0)
+    total += naik
+    print(f"  {alamat:22} +{naik}")
+if total:
+    for alamat in sorted(set(sebelum) | set(sesudah)):
+        naik = sesudah.get(alamat, 0) - sebelum.get(alamat, 0)
+        print(f"  {alamat:22} {naik / total * 100:5.1f}%")
+    print(f"  total tercatat: {total} permintaan")
+PY
 
 # ===========================================================================
 catat "=== 3. Matikan app1 saat sistem berjalan ==="
