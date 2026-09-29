@@ -27,7 +27,7 @@ Purwarupa sistem terdistribusi berisi empat container Docker: Nginx sebagai load
 
 ## Rencana Proyek
 
-- Google Docs (dibagikan kepada dosen dengan akses komentar) — tautan: `[ISI TAUTAN]`
+- Google Docs (dibagikan kepada dosen dengan akses komentar) — tautan: [MKKL1030 — Load Balancer dan Replicated App](https://docs.google.com/document/d/11KX6rlOrZWmQWi_vplcNos2axfwvxbLx_SRCl610EkU/edit)
 - Salinan di repository: [`docs/rencana-proyek.md`](docs/rencana-proyek.md)
 
 ## Cara Menjalankan

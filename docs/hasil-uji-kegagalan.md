@@ -18,6 +18,13 @@ jaringan sungguhan.
 **Pembagian port:** Nginx `8080:80`, app1 `5001`, app2 `5002` (keduanya di dalam
 jaringan `backend`, tidak dibuka ke *host*).
 
+**Riwayat pengujian:**
+
+| Tanggal | Yang berubah |
+|---|---|
+| 2026-09-25 | Pengujian pertama, enam skenario |
+| 2026-09-29 | Diulang setelah `hitung_upstream` ditambahkan ke `uji_kegagalan.sh` — pembagian beban kini dihitung dari selisih log, sehingga hasilnya tepat 500/500 |
+
 ---
 
 ## Ringkasan hasil
@@ -36,11 +43,10 @@ jaringan `backend`, tidak dibuka ke *host*).
 ## 1. Keadaan normal — 10 permintaan
 
 ```
-{"permintaan_ke":10,"redis":"ok","server":"app2"}
-{"permintaan_ke":11,"redis":"ok","server":"app1"}
-{"permintaan_ke":12,"redis":"ok","server":"app2"}
+{"permintaan_ke":2057,"redis":"ok","server":"app1"}
+{"permintaan_ke":2058,"redis":"ok","server":"app2"}
 ...
-{"permintaan_ke":19,"redis":"ok","server":"app1"}
+{"permintaan_ke":2066,"redis":"ok","server":"app1"}
 
   app1: 5 respons
   app2: 5 respons
@@ -52,27 +58,47 @@ disimpan di Redis, bukan di memori masing-masing proses.
 
 ## 2. Beban tinggi — 1000 permintaan, 50 bersamaan
 
-```
-Total:        0.1374 secs
-Slowest:      0.0315 secs
-Fastest:      0.0004 secs
+```bash
+Total:        0.1349 secs
+Slowest:      0.0223 secs
+Fastest:      0.0008 secs
 Average:      0.0064 secs
-Requests/sec: 7275.5007
+Requests/sec: 7414.5794
 Status code distribution:
   [200] 1000 responses
+
+# Pembagian upstream, dihitung dari selisih log akses Nginx
+# sebelum dan sesudah uji beban (jadi hanya 1000 permintaan uji itu sendiri):
+  172.20.0.4:5001   app1   500 permintaan   50.0%
+  172.20.0.3:5002   app2   500 permintaan   50.0%
+  total tercatat: 1000 permintaan
 ```
 
 Tidak ada satu pun permintaan yang gagal. Pembagian beban diperiksa dari log
-akses Nginx yang mencatat alamat *upstream* setiap permintaan:
+akses Nginx yang mencatat alamat *upstream* setiap permintaan; hasilnya
+**500 banding 500 — tepat 50% untuk masing-masing app server**. Angka ini jauh
+lebih kuat sebagai bukti dibanding sekadar menyebut "round-robin" pada
+konfigurasi.
 
-```
-508  upstream=172.20.0.3:5001   (app1)
-511  upstream=172.20.0.4:5002   (app2)
-```
+Dua cara pembacaan log pernah dipakai. Cara pertama (hitung seluruh isi log)
+mencampur permintaan dari skenario lain sehingga hasilnya 508/511 dari 1019
+permintaan. Cara kedua — yang dipakai di atas, dan sudah dipasang di
+`src/tests/uji_kegagalan.sh` — mengambil selisih log sebelum dan sesudah uji
+beban, sehingga angkanya bersih. Perbedaan tipis antara keduanya tetap muncul
+karena satu permintaan `/slow` di skenario 5 dikirim ke app1 dan app2
+bergantian; itu sebabnya cara pertama tidak pernah tepat 50/50.
 
-Selisih 508 banding 511 dari 1019 permintaan — perbedaan 0,3%, jadi
-penyeimbangannya terbagi rata. Angka ini jauh lebih kuat sebagai bukti
-dibanding sekadar menyebut "round-robin" pada konfigurasi.
+Catatan penting soal port: `PORT` pada `docker-compose.yml` yang menentukan port
+yang benar-benar didengarkan — app1 `5001`, app2 `5002`. Ini wajib cocok dengan
+blok `upstream` di `nginx/nginx.conf`; kalau tidak, seluruh trafik jatuh ke satu
+node (bug yang pernah terjadi dan sudah diperbaiki). Perhatikan juga bahwa
+`docker compose ps` menampilkan `5001/tcp` untuk **kedua** app server, karena
+nilai itu diambil dari `EXPOSE` pada `Dockerfile` — metadata, bukan port yang
+sedang didengarkan. Jangan tertipu kolom itu saat memeriksa.
+
+Pada log di atas, dua kombinasi lain (`app1:5002` dan `app2:5001`) tidak pernah
+muncul — bukti bahwa masing-masing app server benar-benar melayani dan tidak ada
+trafik yang jatuh ke node yang salah.
 
 ## 3. app1 dimatikan saat sistem berjalan
 
@@ -87,12 +113,12 @@ app2. Setelah `docker compose start app1`, app1 kembali masuk perputaran.
 ## 4. Redis dimulai ulang
 
 ```
-sebelum: {"kunci":["permintaan_total"],"permintaan_total":"24","server":"app2"}
-sesudah: {"kunci":["permintaan_total"],"permintaan_total":"24","server":"app1"}
+sebelum: {"kunci":["permintaan_total"],"permintaan_total":"3071","server":"app2"}
+sesudah: {"kunci":["permintaan_total"],"permintaan_total":"3071","server":"app2"}
   nilai permintaan_total bertahan
 ```
 
-Nilai 24 tetap sama setelah Redis dimulai ulang. Penyebabnya `--appendonly yes`
+Nilai 3071 tetap sama setelah Redis dimulai ulang. Penyebabnya `--appendonly yes`
 pada `docker-compose.yml`: Redis menuliskan setiap perubahan ke berkas di dalam
 volume `redis-data`, sehingga data tidak hilang saat prosesnya berhenti.
 
@@ -102,7 +128,7 @@ Klien memanggil `/slow?detik=8`; Nginx memakai `proxy_read_timeout 5s`.
 
 ```
   kode HTTP: 504
-  waktu tanggap klien: 10067 ms
+  waktu tanggap klien: 10068 ms
 ```
 
 Perlu dijelaskan apa adanya: klien menerima **504 setelah ±10 detik**, bukan 5
