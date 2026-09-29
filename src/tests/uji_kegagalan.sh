@@ -10,7 +10,7 @@
 set -u
 
 URL="${URL:-http://localhost:8080}"
-PROYEK="github.com/KELOMPOK-3-MK3/mkkl1030-loadbalancer-redis"
+PROYEK="github.com/KELOMPOK-1-MK3/spt_2026_kelompok1_load_balancer_terdistribusi"
 
 catat() { printf '\n%s\n' "$*"; }
 

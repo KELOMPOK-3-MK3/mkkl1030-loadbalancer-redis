@@ -11,19 +11,15 @@ Purwarupa sistem terdistribusi berisi empat container Docker: Nginx sebagai load
 
 | No | Nama | NIM | Peran |
 |---|---|---|---|
-| 1 | Yogi Prasetya Sadewa | 23210060 | Ketua kelompok; berkas Docker Compose, konfigurasi Nginx, dan skenario pengujian kegagalan |
-| 2 | Asmarudin | 23210133 | Aplikasi Flask dan titik akhir pemeriksaan kesehatan |
-| 3 | Deski Taiza | 23210003 | Konfigurasi Redis sebagai penyimpanan status bersama dan pengujian ketahanan data |
-| 4 | Akhsanul Taqwim | 23210006 | Penyiapan lingkungan Docker dan pembuatan berkas image |
+| 1 | Paris Mursidan Aufal | 23210125 | Aplikasi server Flask dan basis data penyimpanan hasil pengolahan |
+| 2 | Yogi Prasetya Sadewa | 23210060 | Ketua kelompok; berkas Docker Compose, konfigurasi Nginx, dan skenario pengujian kegagalan |
+| 3 | M. Sidiq Prasetio | 23210075 | Aplikasi client yang menghubungi kedua app server lewat load balancer |
+| 4 | Deski Taiza | 23210003 | Konfigurasi Redis sebagai penyimpanan status bersama dan pengujian ketahanan data |
 | 5 | Wira | 23210045 | Pengujian beban dan pencatatan hasil pengalihan trafik |
-| 6 | Abadi | 23210004 | Penyusunan skrip pengujian kegagalan yang dapat dijalankan ulang |
-| 7 | Ferdyan Ardhani | 23210039 | Pencatatan dan pengolahan hasil pengujian beban menjadi tabel laporan |
-| 8 | Muhammad Iqbal | 23210142 | Pemeriksaan keamanan dasar: pemisahan jaringan container dan penanganan kredensial |
-| 9 | Meriandi Wahyu Kurniawan | [NIM] | Dokumentasi, README, dan pengelolaan repository |
+| 6 | T. Zain Wardana | 23210001 | Skrip pengujian kegagalan dan pengolahan hasil menjadi tabel laporan |
 
-> Kelompok berjumlah 9 orang; panduan menetapkan 4–5 orang sehingga jumlah ini
-> dimintakan persetujuan dosen pada pertemuan ke-2. Setiap anggota melakukan
-> commit dari akun masing-masing.
+> Kelompok berjumlah 6 orang; setiap anggota mengerjakan satu bagian di tiap mata
+> kuliah dan melakukan commit dari akun GitHub masing-masing.
 
 ## Rencana Proyek
 
@@ -84,7 +80,7 @@ Hasil setiap skenario beserta penjelasannya ada di
 ## Struktur Repository
 
 ```
-mkkl1030-loadbalancer-redis/
+spt_2026_kelompok1_load_balancer_terdistribusi/
 ├── README.md
 ├── docker-compose.yml
 ├── docs/
